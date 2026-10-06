@@ -10,11 +10,11 @@ Meine Lerndokumentation für die LAP.
 
 
 
-\- \[\[00\_Ausgangspunkt]]
+\- \[Ausgangspunkt](00\_ausgangspunkt)
 
-\- \[\[01\_PHP-Grundlagen]]
+\- \[PHP-Grundlagen](01\_php-grundlagen)
 
-\- \[\[02\_Datenbank]]
+\- \[Datenbank](02\_datenbank)
 
-\- \[\[03\_Formulare-und-Sessions]]
+\- \[Formulare und Sessions](03\_formulare-und-sessions)
 
