@@ -21,7 +21,7 @@ error_reporting(E_ALL);                  // alle Fehlerarten melden, auch Warnun
 Fügen den Inhalt der Datei an dieser Stelle ins Script ein.
 
 ## Aufruf 
-`<Statement> '<FileName.php>';` /  `<Statement> __DIR__ . '<Path/FileName.php>';`
+`<Statement> '<FileName.php>';` /  `<Statement> __DIR__ . '</Path/FileName.php>';`
 
 > `__DIR__`: Ordner der aktuellen Datei.
 
