@@ -7,7 +7,7 @@ configuration:
   analytics:
     provider: plausible
   locale: en-US
-  baseUrl: LAP-Lerndoku.github.io
+  baseUrl: AllRyt.github.io/LAP-LernenDoku
   ignorePatterns:
     - private
     - templates
