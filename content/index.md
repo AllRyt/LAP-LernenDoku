@@ -1,22 +1,12 @@
-\# LAP Lerndokumentation
-
-
+# LAP Lerndokumentation
 
 Meine Lerndokumentation für den Praxisteil der LAP-Applikationsentwickler.
 
 
+## Inhalte
 
-\## Inhalte
-
-
-
-\- \[\[00\_Ausgangspunkt]]
-
-\- \[\[01\_PHP-Grundlagen]]
-
-\- \[\[02\_Datenbank]]
-
-\- \[\[03\_Formulare-und-Sessions]]
-
-
+- [[00_Ausgangspunkt]]
+- [[01_PHP-Grundlagen]]
+- [[02_Datenbank]]
+- [[03_Formulare-und-Sessions]]
 
