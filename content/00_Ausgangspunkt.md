@@ -10,7 +10,7 @@ Für beide VMs bekommt man Zugangsdaten.
 Die **Ubuntu-Server-VM** fungiert als webserver und stellt den LAMP-Stack bereit. 
 Man startet sie nur und meldet sich an.
 **LAMP** läuft automatisch über Systemdienste(systemd) auf Ubuntu.
-> LAMP = **L**inux + **A**pache + **M**ySQL/MariaDB + **P**HP
+> LAMP = **L**inux + **A**pache + **MariaDB + **P**HP
 
 Dienste Prüfen:
 ```Linux
@@ -21,7 +21,10 @@ Dienste Prüfen:
 
 ## Windows-VM
 
-Die **Windows-VM** ist die Entwicklungsumgebung mit **Visual Studio Code** (Code schreiben) und **WinSCP** (Dateiübertragung). 
+Die **Windows-VM** ist **WinSCP** (Dateiübertragung).
+Ein Editor der eigenen Wahl kann nachinstalliert werden, wobei die dafür
+erforderliche Installationszeit zur Prüfungszeit zählt.
+ 
 Von Windows aus verbindet man sich über WinSCP per **SFTP** mit dem Linux-Server.
 ```
 Host: [IPv4 des Ubuntu-Servers]               # In Linux: hostname -I
