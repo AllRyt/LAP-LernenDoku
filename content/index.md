@@ -2,7 +2,7 @@
 
 
 
-Meine Lerndokumentation für die LAP.
+Meine Lerndokumentation für den Praxisteil der LAP-Applikationsentwickler.
 
 
 
@@ -10,11 +10,13 @@ Meine Lerndokumentation für die LAP.
 
 
 
-\- \[Ausgangspunkt](00\_ausgangspunkt)
+\- \[\[00\_Ausgangspunkt]]
 
-\- \[PHP-Grundlagen](01\_php-grundlagen)
+\- \[\[01\_PHP-Grundlagen]]
 
-\- \[Datenbank](02\_datenbank)
+\- \[\[02\_Datenbank]]
 
-\- \[Formulare und Sessions](03\_formulare-und-sessions)
+\- \[\[03\_Formulare-und-Sessions]]
+
+
 
