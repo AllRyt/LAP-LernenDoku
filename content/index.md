@@ -5,7 +5,6 @@ Meine Lerndokumentation für den Praxisteil der LAP-Applikationsentwickler.
 
 ## Inhalte
 
-- [[00_Ausgangspunkt]]
 - [[01_PHP-Grundlagen]]
 - [[02_Datenbank]]
 - [[03_Formulare-und-Sessions]]
