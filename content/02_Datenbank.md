@@ -202,7 +202,7 @@ DROP INDEX idx_<spalte> ON <tabelle>;
 > **Index:** Sortierte Nachschlagestruktur (**B-Baum**) mit Bezug auf eine spezifische Tabelle. Nicht als Tabelle sichtbar.
 > Besteht pro Eintrag aus: **Spaltenwert(e)** + **Verweis auf die Zeile** (in InnoDB: der PK).
 > Schnelles `WHERE` / `JOIN` / `ORDER BY` statt alle Zeilen zu durchsuchen. Kostet Speicher und etwas Schreibgeschwindigkeit.
-> `PRIMARY KEY`, `UNIQUE` und `FOREIGN KEY` stellen selbst einen Index da.
+> `PRIMARY KEY`, `UNIQUE` und `FOREIGN KEY` stellen selbst einen Index dar.
 > Indexierung auf Strings möglich (z. B. `email`). PK als String ebenfalls möglich, üblich ist aber `INT AUTO_INCREMENT`.
 
 ## Daten (DML)
@@ -589,7 +589,7 @@ Der restliche Code ruft nur Methoden auf (`$repo->findAll()`) und schreibt selbs
 → Trennung: **Entity = Was** (die Daten), **Repository = Wie** (laden/speichern).
 
 > Repository nur bei **Hauptobjekten**.
-> Zwischentabellen: kein eigenes Repository, übernimmt eine der Haupttabellen. Eigene Entity bei Bedarf.
+> Zwischentabellen: kein eigenes Repository, übernimmt eine der Haupttabellen (z. B. Bestellung speichert ihre Positionen). Eigene Entity bei Bedarf.
 
 > Alternative (Active Record): CRUD-Methoden direkt in der Entity (`$obj->save()`). Weniger Dateien, aber Daten und DB-Zugriff vermischt.
 
@@ -729,4 +729,5 @@ $repo->insert($neu);                 // $neu->getId() ist danach gesetzt
 $obj->set<Eigenschaft>($neuerWert);
 $repo->update($obj);
 ```
+
 > Alternative ohne `fromRow()`: `$stmt->fetchAll(PDO::FETCH_CLASS, <Entity>::class)` befüllt Eigenschaften direkt über die Spaltennamen. Weniger Kontrolle (Namen müssen übereinstimmen, kein Casting).
