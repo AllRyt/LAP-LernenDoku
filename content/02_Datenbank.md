@@ -87,6 +87,15 @@ Rechnungen dürfen sich nicht nachträglich ändern, wenn z. B. ein Preis angepa
 
 > Queries testen: phpMyAdmin → Datenbank wählen → Reiter **SQL**.
 
+## Sprachbereiche
+
+| Kürzel | Name | Betrifft | Befehle |
+|---|---|---|---|
+| **DDL** | Data Definition Language | **Struktur** | `CREATE`, `ALTER`, `DROP` |
+| **DML** | Data Manipulation Language | **Daten** | `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
+| **DCL** | Data Control Language | **Rechte** | `GRANT`, `REVOKE` |
+| **TCL** | Transaction Control Language | **Transaktionen** | `START TRANSACTION`, `COMMIT`, `ROLLBACK` |
+
 ## Syntax-Grundregeln
 
 | Element | Schreibweise | Beispiel |
@@ -121,6 +130,8 @@ CREATE TABLE <tabelle> (
     FOREIGN KEY (<parent>_id) REFERENCES <parent>(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 ```
+> **Storage Engine:** Art der internen Tabellenspeicherung der Datenbank. Angabe pro Tabelle.
+> **InnoDB:** Speichermodell, unterstützt Fremdschlüssel und Transaktionen. Standard, Angabe optional.
 
 Zwischentabelle (`n:m`) mit zusammengesetztem PK:
 ```sql
@@ -132,7 +143,18 @@ CREATE TABLE <a>_<b> (
     FOREIGN KEY (<b>_id) REFERENCES <b>(id)
 ) ENGINE=InnoDB;
 ```
-> Hat die Zwischentabelle eigene Daten (z. B. Menge), bekommt sie oft eine eigene `id` als PK.
+> Hat die Zwischentabelle eigene Daten (z. B. Menge), bekommt sie oft eine eigene `id` als PK:
+```sql
+CREATE TABLE <a>_<b> (
+    id      INT AUTO_INCREMENT PRIMARY KEY,
+    <a>_id  INT NOT NULL,
+    <b>_id  INT NOT NULL,
+    menge   INT NOT NULL,
+    UNIQUE (<a>_id, <b>_id),                    -- optional: Kombination trotzdem einmalig
+    FOREIGN KEY (<a>_id) REFERENCES <a>(id),
+    FOREIGN KEY (<b>_id) REFERENCES <b>(id)
+) ENGINE=InnoDB;
+```
 
 ### Tabelle ändern / löschen
 ```sql
@@ -177,6 +199,11 @@ USE <db>;
 CREATE INDEX idx_<spalte> ON <tabelle>(<spalte>);
 DROP INDEX idx_<spalte> ON <tabelle>;
 ```
+> **Index:** Sortierte Nachschlagestruktur (**B-Baum**) mit Bezug auf eine spezifische Tabelle. Nicht als Tabelle sichtbar.
+> Besteht pro Eintrag aus: **Spaltenwert(e)** + **Verweis auf die Zeile** (in InnoDB: der PK).
+> Schnelles `WHERE` / `JOIN` / `ORDER BY` statt alle Zeilen zu durchsuchen. Kostet Speicher und etwas Schreibgeschwindigkeit.
+> `PRIMARY KEY`, `UNIQUE` und `FOREIGN KEY` stellen selbst einen Index da.
+> Indexierung auf Strings möglich (z. B. `email`). PK als String ebenfalls möglich, üblich ist aber `INT AUTO_INCREMENT`.
 
 ## Daten (DML)
 
@@ -189,6 +216,7 @@ ORDER BY <spalte> ASC|DESC
 LIMIT <anzahl> OFFSET <start>;
 ```
 
+> `ASC`: aufsteigende Sortierung (Standard). `DESC`: absteigende Sortierung.
 > Ausführungsreihenfolge: `FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `ORDER BY` → `LIMIT`
 
 ### Bedingungen (`WHERE`)
@@ -202,6 +230,17 @@ LIMIT <anzahl> OFFSET <start>;
 | `LIKE '%text%'` | Muster: `%` = beliebig viele Zeichen, `_` = genau ein Zeichen |
 | `IS NULL` / `IS NOT NULL` | Prüfung auf `NULL` (**nicht** `= NULL`) |
 | `EXISTS (<subquery>)` / `NOT EXISTS` | Subquery liefert mind. eine Zeile |
+
+`LIKE`: Mustervergleich für Texte
+
+| Muster | Trifft zu auf |
+|---|---|
+| `'Bohr%'` | beginnt mit „Bohr" |
+| `'%hammer'` | endet mit „hammer" |
+| `'%akku%'` | enthält „akku" |
+| `'B_hr'` | `_` = genau ein Zeichen |
+
+> Mit `_ci`-Kollation wird Groß-/Kleinschreibung ignoriert.
 
 ### Aggregation
 ```sql
@@ -257,9 +296,6 @@ DELETE FROM <tabelle> WHERE id = <id>;
 > **`UPDATE` und `DELETE` ohne `WHERE` betreffen alle Zeilen!**
 
 ### Transaktionen
-Mehrere Statements werden zu einer Einheit zusammengefasst: Entweder werden **alle** übernommen (`COMMIT`) oder **keines** (`ROLLBACK`).
-Schlägt ein Statement in der Mitte fehl, bleibt die DB im Zustand von vorher, es entstehen keine halben Datensätze.
-Typisch: Ein Datensatz mit abhängigen Einträgen in einer zweiten Tabelle, die nur gemeinsam Sinn ergeben.
 ```sql
 START TRANSACTION;
 -- mehrere Statements
@@ -322,7 +358,18 @@ class Database
 
 >`ERRMODE_EXCEPTION`: SQL-Fehler werfen eine Exception.
 >`FETCH_ASSOC`: Ergebnisse kommen als `["spalte" => wert]`, ohne doppelte Zahlen-Indizes.
->`EMULATE_PREPARES false`: Echte Prepared Statements in der DB. Zahlen kommen als Zahl zurück, `LIMIT ?` funktioniert.
+>`EMULATE_PREPARES false`: Echte Prepared Statements in der DB, `LIMIT ?` funktioniert.
+
+```php
+// FETCH_BOTH (Standard)
+["name" => "Bohrer", 0 => "Bohrer", "preis" => "9.99", 1 => "9.99"]
+// FETCH_ASSOC
+["name" => "Bohrer", "preis" => "9.99"]
+```
+
+> `prepare` + `execute` funktionieren in **beiden** Modi gleich.
+> `EMULATE_PREPARES true` (Standard): **PDO** setzt die Werte als maskierte Strings in den SQL-String ein und schickt fertiges SQL → `LIMIT ?` scheitert (`LIMIT '10'`).
+> `EMULATE_PREPARES false`: SQL mit Platzhaltern und Werte gehen **getrennt** an die DB.
 
 Include:
 ```php
@@ -347,18 +394,43 @@ $sql = "SELECT * FROM <tabelle> WHERE email = '$email'";
 
 **Schutz:** Prepared Statements. SQL und Werte werden getrennt an die DB geschickt, Werte werden nie als SQL ausgeführt.
 
+## Methoden
+
+```ts
+// Typen als Schema
+PDO.prepare(sql: string): PDOStatement          // bei ERRMODE_EXCEPTION: Fehler → Exception
+PDOStatement.execute(params?: array): bool      // führt aus
+PDOStatement.bindValue(param, value, type): bool
+PDOStatement.fetch() / fetchAll() / rowCount() ...
+```
+
+> `prepare`: Rückgabe: Objekt der Klasse `PDOStatement`.
+> `PDOStatement`: vorbereitetes Statement für Methoden `execute`, `fetch`, ...
+
+Reihenfolge:
+```
+prepare()  →  [bindValue()]  →  execute()  →  fetch() / fetchAll() / rowCount()
+```
+> Vor `execute` gibt es kein Ergebnis (`fetch()` → `false`).
+> `fetch()` liest zeilenweise, jeder Aufruf liefert die nächste Zeile. Nach `fetchAll()` ist alles gelesen.
+
 ## Platzhalter
 
 ```php
 // Positionell: ?
-$stmt = $conn->prepare("SELECT * FROM <tabelle> WHERE id = ? AND <flag> = ?");
+$stmt = $conn->prepare("SELECT * FROM <tabelle> WHERE (id = ? AND <flag> = ?)");
 $stmt->execute([$id, 1]);
 
 // Benannt: :name
 $stmt = $conn->prepare("SELECT * FROM <tabelle> WHERE email = :email");
 $stmt->execute(["email" => $email]);
 ```
+`execute([...])`:
+- Array-Elemente ersetzen in **gleicher Reihenfolge** die `?` wie im prepare-Statement.
+- Assoziatives Array: `:<Schlüsselwort>` aus prepare-Statement gezielt mit Wert ersetzen: `["<Schlüsselwort>" => wert]` (Doppelpunkt im Schlüssel optional).
+
 > Beide Arten nicht in einem Statement mischen.
+> Gleicher benannter Platzhalter zweimal im Statement ist unter `EMULATE_PREPARES false` **nicht erlaubt** → unterschiedliche Namen (`:x1`, `:x2`).
 
 Typ explizit setzen (z. B. bei `LIMIT`):
 ```php
@@ -366,6 +438,7 @@ $stmt = $conn->prepare("SELECT * FROM <tabelle> LIMIT :limit");
 $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
 $stmt->execute();
 ```
+> `bindValue(":limit", $limit, PDO::PARAM_INT)` bindet den Wert mit Typ an den Platzhalter.
 
 ### Regeln
 - Platzhalter **nur für Werte**. Nicht für Tabellen-, Spaltennamen oder `ASC`/`DESC` → dafür feste Auswahl (Whitelist) im PHP-Code.
@@ -446,9 +519,21 @@ try {
     }
 }
 ```
-> Beim Bearbeiten den eigenen Datensatz ausschließen: `... WHERE <code> = ? AND id <> ?`
+> Beim Bearbeiten den eigenen Datensatz ausschließen: `... WHERE (<code> = ? AND id <> ?)`
 
 ## Transaktionen
+
+Mehrere Statements werden zu einer Einheit zusammengefasst: Entweder werden **alle** übernommen (`COMMIT`) oder **keines** (`ROLLBACK`).
+Schlägt ein Statement in der Mitte fehl, bleibt die DB im Zustand von vorher, es entstehen keine halben Datensätze.
+Typisch: Ein Datensatz mit abhängigen Einträgen in einer zweiten Tabelle, die nur gemeinsam Sinn ergeben.
+
+| Methode | Wirkung |
+|---|---|
+| `beginTransaction()` | schaltet Autocommit **aus**. Ab hier wird nichts endgültig gespeichert. |
+| `commit()` | speichert alles seit `beginTransaction()` endgültig, **beendet** die Transaktion, Autocommit ist wieder an |
+| `rollBack()` | verwirft alles seit `beginTransaction()`, beendet die Transaktion ebenfalls |
+
+> Endet das Script ohne `commit()`, wird automatisch zurückgerollt.
 
 ```php
 try {
@@ -490,14 +575,25 @@ Objektrelationales Mapping: Datenbank-Zeilen werden in Objekte übersetzt und um
 |---|---|---|
 | **Entity** | hält die Daten eines Datensatzes | `classes/<Entity>.php` |
 | **Repository** | DB-Zugriff (CRUD) für diese Entity | `classes/<Entity>Repository.php` |
+
+**Entity**
+Reines Datenobjekt. Bildet **einen** Datensatz einer Tabelle ab: eine Eigenschaft pro Spalte, dazu Getter/Setter.
+Kennt die Datenbank nicht, enthält kein SQL.
+Wird überall im Code herumgereicht (Anzeige, Formulare, Validierung).
+
+**Repository**
+Einzige Stelle, an der SQL für diese Tabelle steht.
+Nimmt Entities entgegen und speichert sie (`insert`, `update`) oder liest Zeilen aus der DB und gibt sie als Entities zurück (`findById`, `findAll`).
+Der restliche Code ruft nur Methoden auf (`$repo->findAll()`) und schreibt selbst kein SQL.
+
 → Trennung: **Entity = Was** (die Daten), **Repository = Wie** (laden/speichern).
+
+> Repository nur bei **Hauptobjekten**.
+> Zwischentabellen: kein eigenes Repository, übernimmt eine der Haupttabellen. Eigene Entity bei Bedarf.
 
 > Alternative (Active Record): CRUD-Methoden direkt in der Entity (`$obj->save()`). Weniger Dateien, aber Daten und DB-Zugriff vermischt.
 
 ## Entity
-Reines Datenobjekt. Bildet **einen** Datensatz einer Tabelle ab: eine Eigenschaft pro Spalte, dazu Getter/Setter.
-Kennt die Datenbank nicht, enthält kein SQL.
-Wird überall im Code herumgereicht (Anzeige, Formulare, Validierung)
 
 ```php
 <?php
@@ -538,9 +634,6 @@ class <Entity>
 > Spalten (`snake_case`) und Eigenschaften (`camelCase`) können unterschiedlich heißen, das Mapping in `fromRow()` übersetzt.
 
 ## Repository
-Reines Datenobjekt. Bildet **einen** Datensatz einer Tabelle ab: eine Eigenschaft pro Spalte, dazu Getter/Setter.
-Kennt die Datenbank nicht, enthält kein SQL.
-Wird überall im Code herumgereicht (Anzeige, Formulare, Validierung)
 
 ```php
 <?php
@@ -589,10 +682,33 @@ class <Entity>Repository
 }
 ```
 > `PDO` wird von außen übergeben → eine Verbindung für alle Repositories.
+> Repository hält **Referenz auf das PDO-Objekt** (keine Kopie).
 > Namenskonvention Getter bei `bool`: `is<Flag>()`.
 
 ## Nutzung
 
+### Bootstrap-Datei
+Eine Datei erledigt Debug, Session, Includes und Verbindung. Jede Seite bindet nur diese ein.
+```php
+<?php
+// includes/bootstrap.php
+require_once __DIR__ . '/debug.php';               // zuerst → Fehler der anderen werden angezeigt
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+require_once __DIR__ . '/../classes/Database.php';
+require_once __DIR__ . '/../classes/<Entity>.php';
+require_once __DIR__ . '/../classes/<Entity>Repository.php';
+
+$conn = (new Database())->getConn();
+```
+
+```php
+// jede Seite, ganz oben
+require_once __DIR__ . '/includes/bootstrap.php';        // aus admin/: '/../includes/bootstrap.php'
+$repo = new <Entity>Repository($conn);
+```
+
+### Ohne Bootstrap
 ```php
 require_once __DIR__ . '/classes/Database.php';
 require_once __DIR__ . '/classes/<Entity>.php';
@@ -613,5 +729,3 @@ $repo->insert($neu);                 // $neu->getId() ist danach gesetzt
 $obj->set<Eigenschaft>($neuerWert);
 $repo->update($obj);
 ```
-
-> Alternative ohne `fromRow()`: `$stmt->fetchAll(PDO::FETCH_CLASS, <Entity>::class)` befüllt Eigenschaften direkt über die Spaltennamen. Weniger Kontrolle (Namen müssen übereinstimmen, kein Casting).
