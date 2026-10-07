@@ -729,3 +729,4 @@ $repo->insert($neu);                 // $neu->getId() ist danach gesetzt
 $obj->set<Eigenschaft>($neuerWert);
 $repo->update($obj);
 ```
+> Alternative ohne `fromRow()`: `$stmt->fetchAll(PDO::FETCH_CLASS, <Entity>::class)` befüllt Eigenschaften direkt über die Spaltennamen. Weniger Kontrolle (Namen müssen übereinstimmen, kein Casting).
