@@ -96,6 +96,7 @@ Einfaches, sicheres, logisches User Interface
 ```
 /var/www/
 ├── config.php                  # DB-Zugangsdaten (außerhalb Webroot)
+├── setup.sql                   # DB-Struktur + Testdaten (Setup-Script)
 └── html/shop/
     ├── index.php               # Produktliste
     ├── produkt.php             # Produktdetails
@@ -113,16 +114,21 @@ Einfaches, sicheres, logisches User Interface
     │
     ├── classes/
     │   ├── Database.php
-    │   ├── Product.php
+    │   ├── Product.php               # Entity
+    │   ├── ProductRepository.php
     │   ├── User.php
+    │   ├── UserRepository.php
     │   ├── Order.php
+    │   ├── OrderItem.php             # Entity Zwischentabelle (kein eigenes Repository)
+    │   ├── OrderRepository.php       # speichert Order + OrderItems (Transaktion)
     │   └── Validator.php
     │
     ├── includes/
+    │   ├── bootstrap.php       # debug + Session + Includes + DB-Verbindung
     │   ├── debug.php
+    │   ├── functions.php       # Hilfsfunktionen, z. B. e()
+    │   ├── auth.php            # requireLogin() / requireAdmin()
     │   ├── header.php
-    │   ├── footer.php
-    │   └── auth.php            # Login-/Admin-Prüfung
+    │   └── footer.php
     │
-    └── uploads/                # Produktbilder
-```
+    └── uploads/                # Produktbilder (Schreibrechte für www-data)
