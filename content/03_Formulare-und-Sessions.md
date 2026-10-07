@@ -10,12 +10,12 @@
 </form>
 ```
 
-| Attribut | Bedeutung |
-|---|---|
-| `method="post"` | Daten im Request-Body → `$_POST`. Für alles, was Daten ändert oder sensibel ist |
-| `method="get"` | Daten in der URL (`?feld=wert`) → `$_GET`. Für Filter, Suche, IDs zum Anzeigen |
-| `action` | Ziel-Script. Leer/weggelassen = gleiches Script |
-| `name` | Schlüssel im Array (`$_POST["<feld>"]`). **Ohne `name` wird das Feld nicht gesendet** |
+| Attribut        | Bedeutung                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `method="post"` | Daten im Request-Body → `$_POST`. Für alles, was Daten ändert oder sensibel ist       |
+| `method="get"`  | Daten in der URL (`?feld=wert`) → `$_GET`. Für Filter, Suche, IDs zum Anzeigen        |
+| `action`        | Ziel-Script. Leer/weggelassen = gleiches Script                                       |
+| `name`          | Schlüssel im Array (`$_POST["<feld>"]`). **Ohne `name` wird das Feld nicht gesendet** |
 
 ## Auslesen
 
@@ -174,18 +174,18 @@ Ausgabe:
 
 ## Prüfungen
 
-| Prüfung | Code |
-|---|---|
-| Pflichtfeld | `trim($x) === ""` |
-| Länge | `mb_strlen($x)` (Umlaute = 1 Zeichen, `strlen` zählt Bytes) |
-| E-Mail | `filter_var($x, FILTER_VALIDATE_EMAIL) !== false` |
-| Ganzzahl | `filter_var($x, FILTER_VALIDATE_INT)` → Zahl oder `false` |
-| Ganzzahl mit Bereich | `filter_var($x, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]])` |
-| Kommazahl | `filter_var(str_replace(",", ".", $x), FILTER_VALIDATE_FLOAT)` |
-| Muster | `preg_match('/^[0-9]{4}$/', $x) === 1` |
-| Feste Auswahl | `in_array($x, ["<a>", "<b>"], true)` |
-| Gleichheit | `$pw !== $pwWiederholung` |
-| Einmalig in DB | `SELECT COUNT(*)` vorab, siehe `02_Datenbank.md` → Doppelte Werte abfangen |
+| Prüfung              | Code                                                                       |
+| -------------------- | -------------------------------------------------------------------------- |
+| Pflichtfeld          | `trim($x) === ""`                                                          |
+| Länge                | `mb_strlen($x)` (Umlaute = 1 Zeichen, `strlen` zählt Bytes)                |
+| E-Mail               | `filter_var($x, FILTER_VALIDATE_EMAIL) !== false`                          |
+| Ganzzahl             | `filter_var($x, FILTER_VALIDATE_INT)` → Zahl oder `false`                  |
+| Ganzzahl mit Bereich | `filter_var($x, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]])`   |
+| Kommazahl            | `filter_var(str_replace(",", ".", $x), FILTER_VALIDATE_FLOAT)`             |
+| Muster               | `preg_match('/^[0-9]{4}$/', $x) === 1`                                     |
+| Feste Auswahl        | `in_array($x, ["<a>", "<b>"], true)`                                       |
+| Gleichheit           | `$pw !== $pwWiederholung`                                                  |
+| Einmalig in DB       | `SELECT COUNT(*)` vorab, siehe `02_Datenbank.md` → Doppelte Werte abfangen |
 
 > `filter_var(...)` liefert bei `0` als gültige Zahl `0` → Vergleich immer mit `=== false`, nicht `!$x`.
 
@@ -244,6 +244,19 @@ echo "Hallo " . $_GET["name"];
 echo htmlspecialchars($wert, ENT_QUOTES, "UTF-8");
 ```
 
+### Maskierung (Escaping)
+HTML-Sonderzeichen werden in **HTML-Entities** umgewandelt → Browser zeigt sie als Text an, statt sie als HTML/JS auszuführen.
+
+```ts
+htmlspecialchars(string $string, int $flags, ?string $encoding): string
+```
+- `$string`: umzuwandelnder Text.
+- `$flags`: Bitmaske für Umgang mit Anführungszeichen, ungültigen Zeichenfolgen und Dokumenttyp.
+  - Default (ab PHP 8.1): `ENT_QUOTES`
+  maskiert `"` **und** `'` (wichtig in Attributen).
+- `$encoding`: Zeichenkodierung des Textes. Default:  (ab PHP 8.1): `UTF-8`
+
+
 | Zeichen | wird zu |
 |---|---|
 | `<` / `>` | `&lt;` / `&gt;` |
@@ -265,8 +278,9 @@ function e(?string $wert): string
 
 ### Regeln
 - **Bei der Ausgabe** maskieren, nicht beim Speichern (DB enthält Originalwerte).
-- Gilt auch für Attribute (`value`, `href`, `src`, `alt`).
-- Zahlen per `(int)` / `(float)` ausgeben reicht.
+- Gilt nicht nur für Text zwischen Tags (`<p>…</p>`), sondern **auch innerhalb von Attributwerten** (`value="…"`, `href`, `src`, `alt`).
+  > Im Attribut reicht schon ein `"`, um aus dem Wert auszubrechen: `" onfocus="alert(1)` → deshalb `ENT_QUOTES`.
+- Zahlen per `(int)` / `(float)` gecastet müssen nicht maskiert werden (enthalten nur Ziffern). Gilt nur nach dem Cast, nicht für Zahlen-Strings (z. B. `DECIMAL` aus der DB).
 - `htmlspecialchars` ≠ Schutz vor SQL-Injection → dafür Prepared Statements.
 
 | Angriff | Schutz | Wann |
@@ -277,7 +291,7 @@ function e(?string $wert): string
 
 ## CSRF (Cross-Site Request Forgery)
 
-Fremde Seite schickt im Namen eines eingeloggten Users ein Formular an deinen Shop (z. B. Produkt löschen).
+Fremde Seite schickt im Namen eines eingeloggten Users ein Formular auf deine Webseite (z. B.datensätze löschen).
 **Schutz:** Geheimes Token in der Session, das jedes Formular mitschicken muss.
 
 ```php
@@ -296,6 +310,17 @@ if (!hash_equals($_SESSION["csrf"], $_POST["csrf"] ?? "")) {
 ```
 
 > Daten ändernde Aktionen (Löschen, Freigeben) **nur per POST**, nicht über Links (`?delete=5`).
+
+**Abgrenzung zum Zugriffsschutz** (zwei Ebenen, unterschiedliche Angriffe):
+
+| Schutz | Prüft | Schützt gegen |
+|---|---|---|
+| Zugriffsschutz (`requireLogin` / `requireAdmin`) | **wer** sendet (Session) | Unbefugte |
+| CSRF-Token | **woher** die Anfrage kommt (eigenes Formular) | fremde Seite, die den Browser eines **eingeloggten** Users missbraucht |
+
+> Der Browser schickt das Session-Cookie automatisch mit → eine gefälschte Anfrage besteht den Login-Check. Nur das Token unterscheidet sie.
+
+**Wo:** jedes Formular, das für eingeloggte User **Daten ändert** (Admin-Aktionen, Bestellung, Adressen). Nicht nötig bei reinen GET-Formularen (Suche, Filter).
 
 ---
 
