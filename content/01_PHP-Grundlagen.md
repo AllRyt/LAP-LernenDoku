@@ -42,6 +42,74 @@ Das `_once` ist bei Klassen und Funktionen wichtig.
 Wird dieselbe Datei zweimal eingebunden, bricht PHP mit „Cannot redeclare" ab.
 
 ---
+
+## Seitenaufbau: Header / Footer
+
+HTML-Gerüst, das auf jeder Seite gleich ist, wird in zwei Dateien **aufgeteilt**:
+- `header.php` **öffnet** die Tags (`<html>`, `<body>`, `<main>`)
+- `footer.php` **schließt** sie wieder.
+
+Die einzelne Seite liefert nur den Inhalt dazwischen.
+
+```php
+<?php // includes/header.php ?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= e($titel ?? "Shop") ?></title>
+</head>
+<body>
+<header>
+    <nav>
+        <a href="index.php">Startseite</a>
+        <a href="seite.php">Inhalte</a>
+        <?php if (isset($_SESSION["user_id"])): ?>
+            <?php if (!empty($_SESSION["is_admin"])): ?>
+                <a href="admin/index.php">Admin</a>
+            <?php endif; ?>
+            <a href="logout.php">Logout</a>
+        <?php else: ?>
+            <a href="login.php">Login</a>
+        <?php endif; ?>
+    </nav>
+</header>
+<main>
+```
+
+```php
+<?php // includes/footer.php ?>
+</main>
+<footer>
+    <p>&copy; <?= date("Y") ?> Shop</p>
+</footer>
+</body>
+</html>
+```
+
+```php
+<?php // <seite>.php
+require_once __DIR__ . '/includes/bootstrap.php';
+
+// 1. Logik: Formular verarbeiten, Weiterleitungen (header("Location") …)
+// 2. Variablen für die Ausgabe setzen
+$titel = "<Seitentitel>";
+
+include __DIR__ . '/includes/header.php';
+?>
+    <h1><?= e($titel) ?></h1>
+    <!-- Seiteninhalt -->
+<?php
+include __DIR__ . '/includes/footer.php';
+```
+
+> Reihenfolge: **erst Logik, dann `header.php`**. Header gibt HTML aus → danach funktionieren `header("Location")` und `session_start()` nicht mehr.
+> Variablen, die vor dem `include` gesetzt werden (`$titel`), sind im Header verfügbar (gleicher Scope).
+> `<meta name="viewport" …>`: Grundvoraussetzung für Darstellung auf Mobilgeräten.
+> Links aus `admin/` heraus: relative Pfade passen nicht mehr (`../index.php`). Einfache Lösung: absolute Pfade ab Webroot (`/shop/index.php`).
+
+---
 # Objekte / Klassen
 
 ## Grundbegriffe
